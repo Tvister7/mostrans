@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+
+  db:
+    container_name: postgresql_db
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+
+  parser:
+    container_name: parser
+    build: .
+    environment:
+      - LANG=C.UTF-8
+      - LC_ALL=C.UTF-8
+    command: bash -c "python3 newsparser.py"
+    volumes:
+      - .:/application
+    depends_on:
+      - db
+    restart: always
+
+  app:
+    container_name: app
+    build: .
+    environment:
+      - PYTHONPATH="/application/api"
+    command: bash -c "python3 api/main.py"
+    volumes:
+      - .:/application
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - parser
+    restart: always
